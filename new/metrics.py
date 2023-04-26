@@ -7,13 +7,9 @@ from sklearn.linear_model import LinearRegression
 
 def separar_csv():
     df = pd.read_csv('resultado_final.csv', on_bad_lines='skip')
-
     merged_df = df[df['state'] == 'MERGED']
-
     merged_df.to_csv('prs_merged.csv', index=False)
-
     closed_df = df[df['state'] == 'CLOSED']
-
     closed_df.to_csv('prs_closed.csv', index=False)
 
 
@@ -94,7 +90,7 @@ def graficosRQ1(m_mediana_arquivos, c_mediana_arquivos, m_mediana_additions,
     plt.bar(states, values3)
     plt.title('Gráfico de barras')
     plt.xlabel('status do pr')
-    plt.ylabel('qtd de linhas adicionadas')
+    plt.ylabel('qtd de linhas excluídas')
     plt.show()
 
 
@@ -106,7 +102,7 @@ def graficosRQ2(m_median_review_time, c_median_review_time):
     plt.bar(states, values1)
     plt.title('Gráfico de barras')
     plt.xlabel('status do pr')
-    plt.ylabel('review time')
+    plt.ylabel('tempo de review em minutos')
     plt.show()
 
 
@@ -145,13 +141,12 @@ def graficosRQ4(c_median_num_comments, m_median_num_comments, c_median_num_parti
 def main():
     df_merged = pd.read_csv('prs_merged.csv')
 
+    time_list = list(map(time_to_minutes, df_merged['review_time']))
+
     m_mediana_arquivos = statistics.median(df_merged["num_arquivos"])
     m_mediana_additions = statistics.median(df_merged["num_additions"])
     m_mediana_deletions = statistics.median(df_merged["num_deletions"])
-
-    time_list = list(map(time_to_minutes, df_merged['review_time']))
     m_median_review_time = statistics.median(time_list)
-
     m_median_num_caracteres = statistics.median(df_merged["num_caracteres"])
     m_median_num_participants = statistics.median(
         df_merged["num_participants"])
@@ -159,13 +154,12 @@ def main():
 
     df_closed = pd.read_csv('prs_closed.csv')
 
+    time_list = list(map(time_to_minutes, df_closed['review_time']))
+
     c_mediana_arquivos = statistics.median(df_closed["num_arquivos"])
     c_mediana_additions = statistics.median(df_closed["num_additions"])
     c_mediana_deletions = statistics.median(df_closed["num_deletions"])
-
-    time_list = list(map(time_to_minutes, df_closed['review_time']))
     c_median_review_time = statistics.median(time_list)
-
     c_median_num_caracteres = statistics.median(df_closed["num_caracteres"])
     c_median_num_participants = statistics.median(
         df_closed["num_participants"])
