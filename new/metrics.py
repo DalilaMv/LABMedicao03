@@ -58,5 +58,14 @@ def main():
     graficosRQ1(m_mediana_arquivos, c_mediana_arquivos, m_mediana_additions,
                 c_mediana_additions, m_median_deletions, c_mediana_deletions)
 
+    # to do
+    # graficosRQ2() - igual rq1
+    # graficosRQ3() - igual rq1
+    # graficosRQ4() - igual rq1
+    # graficosRQ5() - scatter plot
+    # graficosRQ6() - scatter plot
+    # graficosRQ7() - scatter plot
+    # graficosRQ8() - scatter plot
+
 
 main()
