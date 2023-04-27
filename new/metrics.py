@@ -33,6 +33,13 @@ def boxPlotGenerator(valor_merged, valor_closed, label):
 
     plt.show()
 
+    # realizar o teste t independente
+    t, p = stats.ttest_ind(valor_merged, valor_closed)
+
+    # imprimir o valor t e o valor p
+    print("Valor t:", t)
+    print("Valor p:", p)
+
 
 def scatterPlotGenerator(num_reviews, eixoy, label):
     plt.scatter(num_reviews, eixoy)
