@@ -21,7 +21,8 @@ def time_to_minutes(time_str):
 
 def graficosScatterPlot(variable):
 
-    df_resultadosFinais = pd.read_csv('resultado_final.csv')
+    df_resultadosFinais = pd.read_csv('resultado_final.csv', on_bad_lines='skip')
+    breakpoint()
     # Variáveis x e y
     x_vars = [variable]
     y_var = ['num_reviews']
@@ -152,8 +153,24 @@ def graficosRQ4(df_merged, df_closed):
     plt.show()
 
 
+def scatterTest(df): 
+    
+    # data = pd.DataFrame(df["num_reviews"],df["num_arquivos"])
+
+    plt.scatter(df['num_reviews'], df['num_arquivos'])
+
+    plt.xlabel('Número de Reviews')
+    plt.ylabel('Número de Arquivos')
+
+    plt.show()
+
 def main():
+    df = pd.read_csv('resultado_final.csv', on_bad_lines='skip')
+    scatterTest(df)
+    
+    
     df_merged = pd.read_csv('prs_merged.csv')
+
 
     df_closed = pd.read_csv('prs_closed.csv')
 

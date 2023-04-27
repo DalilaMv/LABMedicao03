@@ -91,7 +91,7 @@ def get_data(nameWithOwner):
             response = requests.post(
                 url, json={"query": query, "variables": variables}, headers=headers)
             
-            sleep(0.9)
+            sleep(0.8)
         except Exception as ex:
             if response.status_code >= 500:
                 token = random.choice(tokens)
@@ -154,6 +154,7 @@ def get_data(nameWithOwner):
             if response.status_code >= 500:
                 token = random.choice(tokens)
             continue
+        
     return
 
 
