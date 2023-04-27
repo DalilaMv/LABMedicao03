@@ -65,120 +65,102 @@ def graficosScatterPlot(variable):
         plt.clf()
 
 
-def graficosRQ1(m_mediana_arquivos, c_mediana_arquivos, m_mediana_additions,
-                c_mediana_additions, m_mediana_deletions, c_mediana_deletions):
-    states = ['merged', 'closed']
-    values1 = [m_mediana_arquivos, c_mediana_arquivos]
-    values2 = [m_mediana_additions, c_mediana_additions]
-    values3 = [m_mediana_deletions, c_mediana_deletions]
+def graficosRQ1(df_merged, df_closed):
+    fig, ax = plt.subplots()
 
     # G1
-    plt.bar(states, values1)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('qtd de arquivos')
+    ax.boxplot([df_merged['num_arquivos'], df_closed['num_arquivos']])
+
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Nº de arquivos x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Número de arquivos')
+
     plt.show()
 
+    fig, ax = plt.subplots()
+
     # G2
-    plt.bar(states, values2)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('qtd de linhas adicionadas')
+    ax.boxplot([df_merged['num_additions'], df_closed['num_additions']])
+
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Nº de linhas adicionadas x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Número de linhas adicionadas')
+
     plt.show()
+
+    fig, ax = plt.subplots()
 
     # G3
-    plt.bar(states, values3)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('qtd de linhas excluídas')
+    ax.boxplot([df_merged['num_deletions'], df_closed['num_deletions']])
+
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Nº de linhas removidas x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Número de linhas removidas')
+
     plt.show()
 
 
-def graficosRQ2(m_median_review_time, c_median_review_time):
-    states = ['merged', 'closed']
-    values1 = [m_median_review_time, c_median_review_time]
+def graficosRQ2(df_merged, df_closed):
+    fig, ax = plt.subplots()
+    time_list_closed = list(map(time_to_minutes, df_closed['review_time']))
+    time_list_merged = list(map(time_to_minutes, df_merged['review_time']))
 
-    # G1
-    plt.bar(states, values1)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('tempo de review em minutos')
+    ax.boxplot([time_list_closed, time_list_merged])
+
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Tempo de review em minutos x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Tempo de review em minutos')
+
     plt.show()
 
 
-def graficosRQ3(c_median_num_caracteres, m_median_num_caracteres):
-    states = ['merged', 'closed']
-    values1 = [m_median_num_caracteres, c_median_num_caracteres]
+def graficosRQ3(df_merged, df_closed):
+    fig, ax = plt.subplots()
+    ax.boxplot([df_merged['num_caracteres'], df_closed['num_caracteres']])
 
-    # G1
-    plt.bar(states, values1)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('tamanho descrição')
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Tamanho da descrição x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Tamanho da descrição')
+
     plt.show()
 
 
-def graficosRQ4(c_median_num_comments, m_median_num_comments, c_median_num_participants, m_median_num_participants):
-    states = ['merged', 'closed']
-    values1 = [m_median_num_comments, c_median_num_comments]
-    values2 = [m_median_num_participants, c_median_num_participants]
+def graficosRQ4(df_merged, df_closed):
+    fig, ax = plt.subplots()
 
     # G1
-    plt.bar(states, values1)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('numero comentários')
+    ax.boxplot([df_merged['num_comments'], df_closed['num_comments']])
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Nº de comentários x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Nº de comentários')
+
     plt.show()
 
     # G2
-    plt.bar(states, values2)
-    plt.title('Gráfico de barras')
-    plt.xlabel('status do pr')
-    plt.ylabel('numero participantes')
+    ax.boxplot([df_merged['num_participants'], df_closed['num_participants']])
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title('Nº de participantes x State')
+    ax.set_xlabel('State')
+    ax.set_ylabel('Nº de participantes')
+
     plt.show()
 
 
 def main():
     df_merged = pd.read_csv('prs_merged.csv')
 
-    time_list = list(map(time_to_minutes, df_merged['review_time']))
-
-    m_mediana_arquivos = statistics.median(df_merged["num_arquivos"])
-    m_mediana_additions = statistics.median(df_merged["num_additions"])
-    m_mediana_deletions = statistics.median(df_merged["num_deletions"])
-    m_median_review_time = statistics.median(time_list)
-    m_median_num_caracteres = statistics.median(df_merged["num_caracteres"])
-    m_median_num_participants = statistics.median(
-        df_merged["num_participants"])
-    m_median_num_comments = statistics.median(df_merged["num_comments"])
-
     df_closed = pd.read_csv('prs_closed.csv')
 
-    time_list = list(map(time_to_minutes, df_closed['review_time']))
-
-    c_mediana_arquivos = statistics.median(df_closed["num_arquivos"])
-    c_mediana_additions = statistics.median(df_closed["num_additions"])
-    c_mediana_deletions = statistics.median(df_closed["num_deletions"])
-    c_median_review_time = statistics.median(time_list)
-    c_median_num_caracteres = statistics.median(df_closed["num_caracteres"])
-    c_median_num_participants = statistics.median(
-        df_closed["num_participants"])
-    c_median_num_comments = statistics.median(df_closed["num_comments"])
-
-    graficosRQ1(m_mediana_arquivos, c_mediana_arquivos, m_mediana_additions,
-                c_mediana_additions, m_mediana_deletions, c_mediana_deletions)
-    graficosRQ2(m_median_review_time, c_median_review_time)
-    graficosRQ3(m_median_num_caracteres, c_median_num_caracteres)
-    graficosRQ4(c_median_num_comments, m_median_num_comments,
-                c_median_num_participants, m_median_num_participants)
-
-    graficosScatterPlot("num_arquivos")
-    graficosScatterPlot("num_additions")
-    graficosScatterPlot("num_deletions")
-    graficosScatterPlot("review_time")
-    graficosScatterPlot("num_caracteres")
-    graficosScatterPlot("num_participants")
-    graficosScatterPlot("num_comments")
+    graficosRQ1(df_merged, df_closed)
+    graficosRQ2(df_merged, df_closed)
+    graficosRQ3(df_merged, df_closed)
+    graficosRQ4(df_merged, df_closed)
 
 
 main()
