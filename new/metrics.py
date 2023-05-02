@@ -24,7 +24,7 @@ def time_to_minutes(time_str):
 def boxPlotGenerator(valor_merged, valor_closed, label):
     fig, ax = plt.subplots()
 
-    ax.boxplot([valor_merged, valor_closed])
+    boxplot_dict = ax.boxplot([valor_merged, valor_closed])
 
     ax.set_xticklabels(['Merged', 'Closed'])
     ax.set_title(label)
@@ -39,6 +39,15 @@ def boxPlotGenerator(valor_merged, valor_closed, label):
     # imprimir o valor t e o valor p
     print("Valor t:", t)
     print("Valor p:", p)
+
+    # acessar os valores dos quartis
+    merged_quartiles = np.percentile(
+        boxplot_dict['boxes'][0].get_ydata(), [25, 50, 75])
+    closed_quartiles = np.percentile(
+        boxplot_dict['boxes'][1].get_ydata(), [25, 50, 75])
+
+    print("Quartis de Merged:", merged_quartiles)
+    print("Quartis de Closed:", closed_quartiles)
 
 
 def scatterPlotGenerator(num_reviews, eixoy, label):
@@ -63,6 +72,7 @@ def scatterPlotGenerator(num_reviews, eixoy, label):
 
 
 def main():
+    separar_csv()
     df = pd.read_csv('resultado_final.csv', on_bad_lines='skip')
     df.dropna(subset=['review_time'], inplace=True)
     df_merged = pd.read_csv('prs_merged.csv')
