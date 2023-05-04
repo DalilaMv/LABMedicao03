@@ -1,170 +1,136 @@
-
-
-from datetime import datetime
-import json
-import random
-from time import sleep
+import statistics
 import pandas as pd
-import requests
-import os
-from dotenv import load_dotenv
-import csv
-import markdown
+import matplotlib.pyplot as plt
+from scipy.stats import spearmanr
+from sklearn.linear_model import LinearRegression
+import numpy as np
+import scipy.stats as stats
 
 
-def get_time_diff(start_time, end_time):
-    diff_seconds = (end_time - start_time).total_seconds()
-    diff_hours, diff_minutes = divmod(diff_seconds, 3600)
-    diff_minutes //= 60
-    return "{:.0f}h{:02.0f}m".format(diff_hours, diff_minutes)
+def separar_csv():
+    df = pd.read_csv('resultado_final.csv', on_bad_lines='skip')
+    merged_df = df[df['state'] == 'MERGED']
+    merged_df.to_csv('prs_merged.csv', index=False)
+    closed_df = df[df['state'] == 'CLOSED']
+    closed_df.to_csv('prs_closed.csv', index=False)
 
 
-def get_remaining_requests(token):
-    headers = {'Authorization': f'token {token}'}
-    response = requests.get(
-        'https://api.github.com/rate_limit', headers=headers)
-    if response.status_code == 200:
-        remaining_requests = response.json()['rate']['remaining']
-        return remaining_requests
-    else:
-        print('Erro ao recuperar número de requisições restantes')
+def time_to_minutes(time_str):
+    hours, minutes = time_str.split('h')
+    total_minutes = int(hours) * 60 + int(minutes.strip('m'))
+    return total_minutes
 
 
-def get_data(nameWithOwner):
-    load_dotenv()
+def boxPlotGenerator(valor_merged, valor_closed, label):
+    fig, ax = plt.subplots()
 
-    tokens = [os.environ["token1"], os.environ["token2"]]
-    token = random.choice(tokens)
+    boxplot_dict = ax.boxplot([valor_merged, valor_closed])
 
-    url = "https://api.github.com/graphql"
+    ax.set_xticklabels(['Merged', 'Closed'])
+    ax.set_title(label)
+    ax.set_xlabel('State')
+    ax.set_ylabel(label)
 
-    query = """
-    query ($after: String, $owner: String!, $name: String!) {
-      repository(owner: $owner, name: $name) {
-        pullRequests(first: 100, states: [MERGED,CLOSED], after: $after) {
-          nodes {
-            id
-            title
-            url
-            author {
-              login
-            }
-            body
-            createdAt
-            mergedAt
-            closedAt
-            additions
-            deletions
-            state
-            participants {
-              totalCount
-            }
-            comments {
-              totalCount
-            }
-            files {
-              totalCount
-            }
-            reviews {
-              totalCount
-            }
-          }
-          pageInfo {
-            endCursor
-            hasNextPage
-          }
-        }
-      }
-    }
-    """
+    plt.show()
 
-    variables = {
-        "after": None,
-        "owner": nameWithOwner.split("/")[0],
-        "name": nameWithOwner.split("/")[1]
-    }
+    # realizar o teste t independente
+    t, p = stats.ttest_ind(valor_merged, valor_closed)
 
-    headers = {"Authorization": "Bearer " + token}
-    row_data = []
-    while True:
-        print("1 * REQUISIÇÃO ")
-        sleep(0.9)
-        response = requests.post(
-            url, json={"query": query, "variables": variables}, headers=headers)
+    # imprimir o valor t e o valor p
+    print("Valor t:", t)
+    print("Valor p:", p)
 
-        data = json.loads(response.text)
-        print(response.content)
+    # acessar os valores dos quartis
+    merged_quartiles = np.percentile(
+        boxplot_dict['boxes'][0].get_ydata(), [25, 50, 75])
+    closed_quartiles = np.percentile(
+        boxplot_dict['boxes'][1].get_ydata(), [25, 50, 75])
 
-        if response.status_code == 200:
-            print("2 * MANIPULAÇÃO DOS DADOS (STATUS CODE = 200)")
-            page_info = data['data']['repository']['pullRequests']['pageInfo']
+    print("Quartis de Merged:", merged_quartiles)
+    print("Quartis de Closed:", closed_quartiles)
 
-            prs = data['data']['repository']['pullRequests']['nodes']
-            for pr in prs:
-                m = pd.read_csv("metricas2.csv")
-                if pr["id"] in m:
-                    continue
-                if pr["reviews"]["totalCount"] < 1:
-                    continue
-                num_reviews = pr["reviews"]["totalCount"]
-                title = pr["title"]
-                created_at = datetime.strptime(
-                    pr['createdAt'], '%Y-%m-%dT%H:%M:%SZ')
 
-                if pr["state"] == 'CLOSED':
-                    closed_at = datetime.strptime(
-                        pr['closedAt'], '%Y-%m-%dT%H:%M:%SZ')
-                    review_time = get_time_diff(created_at, closed_at)
-                    if (created_at - closed_at).seconds < 3600:
-                        continue
-                else:
-                    merged_at = datetime.strptime(
-                        pr['mergedAt'], '%Y-%m-%dT%H:%M:%SZ')
-                    review_time = get_time_diff(created_at, merged_at)
-                    if (created_at - merged_at).seconds < 3600:
-                        continue
+def scatterPlotGenerator(num_reviews, eixoy, label):
+    plt.scatter(num_reviews, eixoy)
 
-                markdown_body = markdown.markdown(pr['body'])
-                with open("src/pull_request_body.md", "w", encoding="utf-8") as file:
-                    file.write(markdown_body)
-                with open("src/pull_request_body.md", "r", encoding="utf-8") as file:
-                    content = file.read()
-                    num_caracteres = len(content)
-                num_arquivos = pr["files"]["totalCount"]
-                num_additions = pr["additions"]
-                num_deletions = pr["deletions"]
-                num_participants = pr["participants"]["totalCount"]
-                num_comments = pr["comments"]["totalCount"]
-                pr_id = pr["id"]
-                state = pr["state"]
-                name_owner = nameWithOwner
+    corr_coef, _ = spearmanr(num_reviews, eixoy)
+    plt.text(0.1, 0.9, f'Coeficiente de correlação de Spearman: {corr_coef:.2f}',
+             transform=plt.gca().transAxes)
 
-                row = [name_owner, pr_id, title, state, review_time, num_reviews, num_caracteres,
-                       num_arquivos, num_additions, num_deletions, num_participants, num_comments]
-                if row in row_data:
-                    continue
-                row_data.append(row)
-            if not page_info['hasNextPage']:
-                break
-        else:
-            print(f"2 * ERRO {response.status_code}")
-            if response.status_code >= 500:
-                token = random.choice(tokens)
-            continue
+    # Cálculo da regressão linear
+    x = np.array(num_reviews)
+    y = np.array(eixoy)
+    m, b = np.polyfit(x, y, 1)
 
-        variables['after'] = page_info['endCursor']
+    # Desenho da linha de regressão
+    plt.plot(x, m*x+b, color='red')
 
-    with open('metricas2.csv', mode='a', newline='') as file:
-        writer = csv.writer(file)
-        for row in row_data:
-            writer.writerow(row)
-    return
+    plt.xlabel('Número de Reviews')
+    plt.ylabel(label)
+
+    plt.show()
 
 
 def main():
-    df = pd.read_csv("resultados_filtrados.csv")
-    for index, row in df.iterrows():
-        get_data(row["Nome"])
+    df = pd.read_csv('resultado_final.csv', on_bad_lines='skip')
+    df.dropna(subset=['review_time'], inplace=True)
+    df_merged = pd.read_csv('prs_merged.csv')
+    df_closed = pd.read_csv('prs_closed.csv')
+
+    m_num_arquivos = df_merged['num_arquivos']
+    c_num_arquivos = df_closed['num_arquivos']
+    label_arquivos = "Número de Arquivos"
+    m_num_additions = df_merged['num_additions']
+    c_num_additions = df_closed['num_additions']
+    label_additions = "Número de linhas adicionadas"
+    m_num_deletions = df_merged['num_deletions']
+    c_num_deletions = df_closed['num_deletions']
+    label_deletions = "Número de linhas removidas"
+    m_review_time = list(map(time_to_minutes, df_merged['review_time']))
+    c_review_time = list(map(time_to_minutes, df_closed['review_time']))
+    label_time = "Tempo de análise em minutos"
+    m_num_caracteres = df_merged['num_caracteres']
+    c_num_caracteres = df_closed['num_caracteres']
+    label_caracteres = "Número de caracteres na descrição"
+    m_num_comments = df_merged['num_comments']
+    c_num_comments = df_closed['num_comments']
+    label_comments = "Número de comentários"
+    m_num_participants = df_merged['num_participants']
+    c_num_participants = df_closed['num_participants']
+    label_participants = "Número de participantes"
+
+    print("RQ1G1")
+    boxPlotGenerator(m_num_arquivos, c_num_arquivos, label_arquivos)
+    print("RQ1G2")
+    boxPlotGenerator(m_num_additions, c_num_additions, label_additions)
+    print("RQ1G3")
+    boxPlotGenerator(m_num_deletions, c_num_deletions, label_deletions)
+    print("RQ2")
+    boxPlotGenerator(m_review_time, c_review_time, label_time)
+    print("RQ3")
+    boxPlotGenerator(m_num_caracteres, c_num_caracteres, label_caracteres)
+    print("RQ4G1")
+    boxPlotGenerator(m_num_comments, c_num_comments, label_comments)
+    print("RQ4G2")
+    boxPlotGenerator(m_num_participants,
+                     c_num_participants, label_participants)
+
+    num_reviews = df['num_reviews']
+    num_arquivos = df['num_arquivos']
+    num_additions = df['num_additions']
+    num_deletions = df['num_deletions']
+    review_time = list(map(time_to_minutes, df['review_time']))
+    num_caracteres = df['num_caracteres']
+    num_comments = df['num_comments']
+    num_participants = df['num_participants']
+
+    scatterPlotGenerator(num_reviews, num_arquivos, label_arquivos)
+    scatterPlotGenerator(num_reviews, num_additions, label_additions)
+    scatterPlotGenerator(num_reviews, num_deletions, label_deletions)
+    scatterPlotGenerator(num_reviews, review_time, label_time)
+    scatterPlotGenerator(num_reviews, num_caracteres, label_caracteres)
+    scatterPlotGenerator(num_reviews, num_comments, label_comments)
+    scatterPlotGenerator(num_reviews, num_participants, label_participants)
 
 
 main()
